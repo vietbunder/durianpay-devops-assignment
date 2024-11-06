@@ -36,8 +36,6 @@ jobs:
         key: ${{ secrets.EC2_SSH_KEY }}        # SSH private key for authentication
         port: 22
         script: |
-          whoami
-          ls -al
           # Stop and remove any existing containers
           sudo docker stop nginx-container || true
           sudo docker rm nginx-container || true
