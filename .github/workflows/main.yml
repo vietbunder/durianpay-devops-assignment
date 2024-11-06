@@ -1,16 +1,16 @@
-name: Deploy to AWS EC2
+name: Build and Deploy Docker Image to EC2
 
 on:
   push:
     branches:
-      - main  # Trigger deployment on push to the main branch
+      - main  # Trigger the workflow on push to the main branch
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Set up Docker Buildx
@@ -18,43 +18,25 @@ jobs:
 
     - name: Log in to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1
-      with:
-        registry-type: public
 
     - name: Build Docker image
       run: |
-        docker build -t nginx-image .
-
-    - name: Tag Docker image
-      env:
-        ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-        ECR_REPOSITORY: nginx-repo
+        docker build -t ${{ secrets.ECR_REGISTRY }}/app:latest .
+      
+    - name: Push Docker image to Amazon ECR
       run: |
-        docker tag nginx-image:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        docker push ${{ secrets.ECR_REGISTRY }}/app:latest
 
-    - name: Push Docker image to ECR
-      env:
-        ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-        ECR_REPOSITORY: nginx-repo
-      run: |
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-    - name: SSH into EC2 and deploy Docker container
-      uses: appleboy/ssh-action@v0.1.10
+    - name: SSH into EC2 and deploy
+      uses: appleboy/ssh-action@v0.1.5
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
-        envs: |
-          ECR_REGISTRY=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-          ECR_REPOSITORY=nginx-repo
-      run: |
-        # Stop and remove any existing container
-        docker stop nginx-container || true
-        docker rm nginx-container || true
-
-        # Pull the latest Docker image from ECR
-        docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-        # Run the Docker container
-        docker run -d --name nginx-container -p 80:80 $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        port: 22
+        script: |
+          # Pull the latest Docker image on EC2
+          docker pull ${{ secrets.ECR_REGISTRY }}/app:latest
+          
+          # Run the Docker container (you can adjust this command to suit your Nginx setup)
+          docker run -d -p 80:80 ${{ secrets.ECR_REGISTRY }}/app:latest
