@@ -11,32 +11,35 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: vietbunder/actions/checkout@v3  # Use your forked version
+      uses: actions/checkout@v3  # GitHub's official checkout action
 
-    - name: Set up Docker Buildx
-      uses: vietbunder/docker/setup-buildx-action@v2  # Use your forked version
+    - name: Set up Docker
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y docker.io
+        sudo systemctl enable --now docker
 
-    - name: Log in to Amazon ECR
-      uses: vietbunder/aws-actions/amazon-ecr-login@v1  # Use your forked version
+    - name: Log in to AWS ECR (using AWS CLI)
+      run: |
+        aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws configure set region ${{ secrets.AWS_REGION }}
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
     - name: Build Docker image
       run: |
         docker build -t ${{ secrets.ECR_REGISTRY }}/latest .
-      
+
     - name: Push Docker image to Amazon ECR
       run: |
         docker push ${{ secrets.ECR_REGISTRY }}/latest
 
     - name: SSH into EC2 and deploy
-      uses: vietbunder/appleboy/ssh-action@v0.1.5  # Use your forked version
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USERNAME }}
-        key: ${{ secrets.EC2_SSH_KEY }}
-        port: 22
-        script: |
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
           # Pull the latest Docker image on EC2
           docker pull ${{ secrets.ECR_REGISTRY }}/latest
           
-          # Run the Docker container (adjust the command based on your Nginx configuration)
+          # Run the Docker container (adjust the command based on your Nginx setup)
           docker run -d -p 80:80 ${{ secrets.ECR_REGISTRY }}/latest
+        EOF
