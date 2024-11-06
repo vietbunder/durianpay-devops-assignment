@@ -1,0 +1,42 @@
+name: Build and Deploy Docker Image to EC2
+
+on:
+  push:
+    branches:
+      - main  # Trigger the workflow on push to the main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build Docker image
+      run: |
+        docker build -t ${{ secrets.ECR_REGISTRY }}/my-app:latest .
+      
+    - name: Push Docker image to Amazon ECR
+      run: |
+        docker push ${{ secrets.ECR_REGISTRY }}/my-app:latest
+
+    - name: SSH into EC2 and deploy
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        port: 22
+        script: |
+          # Pull the latest Docker image on EC2
+          docker pull ${{ secrets.ECR_REGISTRY }}/my-app:latest
+          
+          # Run the Docker container (you can adjust this command to suit your Nginx setup)
+          docker run -d -p 80:80 ${{ secrets.ECR_REGISTRY }}/my-app:latest
