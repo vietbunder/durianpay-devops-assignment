@@ -5,7 +5,7 @@ FROM nginx:latest
 WORKDIR /usr/share/nginx/html
 
 # Copy hello.txt from the repository to the Nginx root directory
-COPY hello.txt /usr/share/nginx/html/
+COPY hello.txt /usr/share/nginx/html/index.html
 
 # Expose port 80 for HTTP traffic
 EXPOSE 80
