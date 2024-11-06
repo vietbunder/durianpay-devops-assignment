@@ -10,10 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    # Checkout the code using SSH (recommended if you are working with private repos)
+    - name: Checkout code via SSH
+      uses: actions/checkout@v2
+      with:
+        repository: ${{ github.repository }}  # Specify the repository if needed
+        ssh-key: ${{ secrets.SSH_SECRET_KEY }} # SSH key to access the repository (if using private repo)
+        persist-credentials: false  # Don't persist GitHub credentials (if you don't need them)
     
-    # Set up Docker Buildx for building multi-platform images (optional, but good practice)
+    # Set up Docker Buildx for building multi-platform images (optional)
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
@@ -24,17 +29,15 @@ jobs:
 
     # Deploy the Docker image to EC2 instance via SSH
     - name: Deploy to EC2
-      uses: actions/checkout@v2
-      env:
-          PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          HOSTNAME: ${{secrets.SSH_HOST}}
-          USER_NAME: ${{secrets.USER_NAME}}
-      run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} '
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.EC2_HOST }}             # EC2 public IP or DNS name
+        username: ${{ secrets.EC2_USERNAME }}     # EC2 SSH username (e.g., ec2-user or ubuntu)
+        key: ${{ secrets.SSH_SECRET_KEY }}        # SSH private key for authentication
+        port: 22
+        script: |
           # Stop and remove any existing containers
           docker stop nginx-container || true
           docker rm nginx-container || true
           # Run the new Docker image on EC2
           docker run -d --name nginx-container -p 80:80 nginx-hello
-          
