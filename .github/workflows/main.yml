@@ -31,8 +31,8 @@ jobs:
       - name: Build Docker Image and Push to Registry
         run: |
           docker build -t nginx-hello .
-          docker tag nginx-hello:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/repository/nginx-hello:latest
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/repository/nginx-hello:latest
+          docker tag nginx-hello:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/nginx-hello:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/nginx-hello:latest
 
       # Deploy Docker image on EC2
       - name: Deploy to EC2
