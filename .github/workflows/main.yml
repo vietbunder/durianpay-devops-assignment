@@ -1,4 +1,4 @@
-name: Deploy Nginx to AWS EC2
+name: Deploy Nginx to AWS EC2 with ECR
 
 on:
   push:
@@ -10,34 +10,42 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    # Checkout the code using SSH (recommended if you are working with private repos)
-    - name: Checkout code via SSH
+    # Checkout the code
+    - name: Checkout code
       uses: actions/checkout@v2
-      with:
-        repository: ${{ github.repository }}  # Specify the repository if needed
-        ssh-key: ${{ secrets.SSH_SECRET_KEY }} # SSH key to access the repository (if using private repo)
-        persist-credentials: false  # Don't persist GitHub credentials (if you don't need them)
-    
-    # Set up Docker Buildx for building multi-platform images (optional)
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
 
-    # Build Docker image locally without pushing to a registry
+    # Log in to AWS ECR
+    - name: Log in to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v1
+      with:
+        region: ${{ secrets.AWS_REGION }}
+
+    # Build Docker image
     - name: Build Docker Image
       run: |
         docker build -t nginx-hello .
+        docker tag nginx-hello:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/nginx-hello:latest
 
-    # Deploy the Docker image to EC2 instance via SSH
+    # Push Docker image to ECR
+    - name: Push to Amazon ECR
+      run: |
+        docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/nginx-hello:latest
+
+    # Deploy Docker image on EC2
     - name: Deploy to EC2
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.EC2_HOST }}             # EC2 public IP or DNS name
-        username: ${{ secrets.EC2_USERNAME }}     # EC2 SSH username (e.g., ec2-user or ubuntu)
-        key: ${{ secrets.EC2_SSH_KEY }}        # SSH private key for authentication
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
         port: 22
         script: |
+          # Log in to ECR from the EC2 instance
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
           # Stop and remove any existing containers
           sudo docker stop nginx-container || true
           sudo docker rm nginx-container || true
-          # Run the new Docker image on EC2
-          sudo docker run -d --name nginx-container -p 80:80 nginx-hello
+          # Pull the latest image from ECR
+          sudo docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/nginx-hello:latest
+          # Run the container
+          sudo docker run -d --name nginx-container -p 80:80 ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/nginx-hello:latest
