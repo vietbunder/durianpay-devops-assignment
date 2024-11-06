@@ -29,7 +29,7 @@ jobs:
 
     # Deploy the Docker image to EC2 instance via SSH
     - name: Deploy to EC2
-      uses: appleboy/ssh-action@v0.1.6
+      uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.EC2_HOST }}             # EC2 public IP or DNS name
         username: ${{ secrets.EC2_USERNAME }}     # EC2 SSH username (e.g., ec2-user or ubuntu)
