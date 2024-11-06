@@ -37,7 +37,7 @@ jobs:
         port: 22
         script: |
           # Stop and remove any existing containers
-          docker stop nginx-container || true
-          docker rm nginx-container || true
+          sudo docker stop nginx-container || true
+          sudo docker rm nginx-container || true
           # Run the new Docker image on EC2
-          docker run -d --name nginx-container -p 80:80 nginx-hello
+          sudo docker run -d --name nginx-container -p 80:80 nginx-hello
