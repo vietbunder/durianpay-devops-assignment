@@ -33,7 +33,7 @@ jobs:
       with:
         host: ${{ secrets.EC2_HOST }}             # EC2 public IP or DNS name
         username: ${{ secrets.EC2_USERNAME }}     # EC2 SSH username (e.g., ec2-user or ubuntu)
-        key: ${{ secrets.SSH_SECRET_KEY }}        # SSH private key for authentication
+        key: ${{ secrets.EC2_SSH_KEY }}        # SSH private key for authentication
         port: 22
         script: |
           # Stop and remove any existing containers
