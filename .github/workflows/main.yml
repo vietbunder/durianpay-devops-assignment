@@ -36,7 +36,7 @@ jobs:
       # Push Docker image to ECR
       - name: Push to Amazon ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/nginx-hello:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/repository/nginx-hello:latest
 
       # Deploy Docker image on EC2
       - name: Deploy to EC2
