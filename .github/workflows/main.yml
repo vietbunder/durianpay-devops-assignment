@@ -28,14 +28,10 @@ jobs:
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
       # Build Docker image
-      - name: Build Docker Image
+      - name: Build Docker Image and Push to Registry
         run: |
           docker build -t nginx-hello .
-          docker tag nginx-hello:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/nginx-hello:latest
-
-      # Push Docker image to ECR
-      - name: Push to Amazon ECR
-        run: |
+          docker tag nginx-hello:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/repository/nginx-hello:latest
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/repository/nginx-hello:latest
 
       # Deploy Docker image on EC2
