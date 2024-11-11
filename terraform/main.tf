@@ -92,7 +92,7 @@ resource "aws_security_group" "ec2_sg" {
 
 # Launch Template for Auto Scaling Group
 resource "aws_launch_template" "ec2" {
-  name          = "asg-launch-template"
+  name          = "asg-launch"
   image_id      = var.ami_id
   instance_type = var.instance_type
   key_name      = var.key_name

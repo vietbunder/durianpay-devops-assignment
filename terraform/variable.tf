@@ -40,5 +40,5 @@ variable "key_name" {
 
 variable "eip_alloc_id" {
   description = "Elastic IP Allocation ID"
-  default     = "eipalloc-0b1e68f764e1b67e7"
+  default     = "eipalloc-0c834aa7fbc1a5962"
 }
